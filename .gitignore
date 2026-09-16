@@ -1,0 +1,5 @@
+*
+!*/
+!.gitignore
+!**/*.py
+__builtins__.py
