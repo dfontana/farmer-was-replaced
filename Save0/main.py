@@ -19,8 +19,15 @@ def plant_rep(fn_list, x, y):
             move_to(x, y)
 
 def mazes():
+    def sleep(n):
+        start  = get_time()
+        while get_time() - start < n:
+            pass
+
     def one_maze(x, y, n):
         def exec():
+            move_to(x, y)
+            sleep(1)
             while True:
                 move_to(x, y)
                 bush(get_ctx(x, y))
@@ -32,9 +39,7 @@ def mazes():
     spawn_drone(one_maze(15,15,8))
     spawn_drone(one_maze(0,15,8))
     spawn_drone(one_maze(15,0,8))
-    pet_the_piggy()
-    pet_the_piggy()
-    one_maze(0,0,5)()
+    one_maze(0,0,8)()
     
 
 def farms():
