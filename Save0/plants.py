@@ -68,6 +68,7 @@ def sunflower(ctx):
         tracked_sunflowers[iden] = True
         heap.add(sunflowers, (measure(), x, y), first)
     if len(sunflowers) == len(tracked_sunflowers):
+        sx, sy = get_pos_x(), get_pos_y()
         while True:
             next = heap.poph(sunflowers, first)
             if not next:
@@ -77,7 +78,7 @@ def sunflower(ctx):
                 if can_harvest():
                     harvest()
                     break
-        move_to(x, 0)
+        move_to(sx, sy)
 
 def build_pumpkin_patch(size, root):
     ps = {'s': zeroes(size*size)}

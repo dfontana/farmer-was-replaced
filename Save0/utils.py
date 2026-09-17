@@ -35,3 +35,8 @@ def all_are(itr, fn):
 
 def first(itr):
     return itr[0]
+
+def extend(l1, l2):
+    for i in l2:
+        l1.append(i)
+    return l1
