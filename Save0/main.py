@@ -28,67 +28,68 @@ def first(itr):
     return itr[0]
 
 def try_water():
-    if num_items(Items.Water) and get_water() < 0.5:
+    if get_water() < 0.5:
         use_item(Items.Water)
 
 def try_harvest():
     if can_harvest():
         harvest()
 
-def grass(x, y):
-    try_harvest()
-    if get_ground_type() != Grounds.Grassland:
+def grass(ctx):
+    if ctx['can_harvest']:
+        harvest()
+    if ctx['ground_type'] != Grounds.Grassland:
         till()
     plant(Entities.Grass)
 
-def bush(x, y):
+def bush(ctx):
     # cost == Free
-    try_harvest()
-    if get_ground_type() != Grounds.Grassland:
+    if ctx['can_harvest']:
+        harvest()
+    if ctx['ground_type'] != Grounds.Grassland:
         till()
     plant(Entities.Bush)
 
-def tree(x, y):
+def tree(ctx):
     # cost == Free
-    try_harvest()
-    if get_ground_type() != Grounds.Grassland:
+    if ctx['can_harvest']:
+        harvest()
+    if ctx['ground_type'] != Grounds.Grassland:
         till()
     plant(Entities.Tree)
 
-def carrot(x, y):
+def carrot(ctx):
     # Cost == 8 grass, 8 wood
-    try_harvest()
-    if get_ground_type() != Grounds.Soil:
+    if ctx['can_harvest']:
+        harvest()
+    if ctx['ground_type'] != Grounds.Soil:
         till()
-    try_water()
     plant(Entities.Carrot)
 
-def alternate(fn1, fn2):
-    def exec(x, y):
-        if y % 2 == 0:
-            fn1(x, y)
-        else:
-            fn2(x, y)
+def watered(fn):
+    def exec(ctx):
+        try_water()
+        fn(ctx)
     return exec
 
-# Sunflowers need to harvest based on largest number of pedals to smallest on the map
-# can be `measure`'d at any point to know when their size. So we need to track state of
-# all sunflows on the map and ensure we harvest in the right order
-#
-# - You could just use existing combinators with a global
-# - and the global tracks whose planted with what leaf count
-# - and harvest routine just doesn't harvest if it's not highest or tied for highest
-# - Let's do that
+def fertilized(fn):
+    def exec(ctx):
+        fn(ctx)
+        use_item(Items.Fertilizer)
+    return exec
 
 # heap of {pedals,x,y}
 sunflowers = []
 tracked_sunflowers = {}
-def sunflower(x, y):
+def sunflower(ctx):
+    x = ctx['x']
+    y = ctx['y']
+    ground_type = ctx['ground_type']
+    entity_type = ctx['entity_type']
     iden = (x, y)
-    if get_ground_type() != Grounds.Soil:
+    if ground_type != Grounds.Soil:
         till()
-    if get_entity_type() == None:
-        try_water()
+    if entity_type != Entities.Sunflower:
         plant(Entities.Sunflower)
         tracked_sunflowers[iden] = True
         heap.add(sunflowers, (measure(), x, y), first)
@@ -107,6 +108,14 @@ def sunflower(x, y):
                     break
         move_to(x, 0)
 
+def alternate(fn1, fn2):
+    def exec(ctx):
+        if ctx['y'] % 2 == 0:
+            fn1(ctx)
+        else:
+            fn2(ctx)
+    return exec
+
 def move_to(x, y):
     cx, cy = get_pos_x(), get_pos_y()
     dx, dy = cx - x, cy - y
@@ -123,7 +132,13 @@ def move_to(x, y):
 def plant_col(fn, x, y):
     bound = WORLD_SIZE - y
     for y_p in range(bound):
-        fn(x, y_p)
+        fn({
+            'x': x,
+            'y': y_p,
+            'can_harvest': can_harvest(),
+            'ground_type': get_ground_type(),
+            'entity_type': get_entity_type()
+        })
         if y_p != bound - 1:
             move(North)
 
@@ -200,18 +215,22 @@ def main():
             alternate(tree, bush),
             alternate(bush, tree),
             alternate(tree, bush),
-            alternate(bush, tree),
+            alternate(fertilized(bush), tree),
             alternate(tree, bush),
             alternate(bush, tree),
         ], 0, 6)
         move_to(6, 0)
         plant_rep([
-            carrot,
-            carrot,
-            carrot,
-            sunflower,
-            grass,
-            grass,
+            watered(carrot),
+            watered(carrot),            
+            watered(sunflower),
+            fertilized(grass),
+            fertilized(grass),
+            fertilized(grass),
+            fertilized(grass),
+            fertilized(grass),
+            fertilized(grass),
+            fertilized(grass),
         ], 6, 0)
         
         
