@@ -1,5 +1,6 @@
 from utils import *
 from maze import build_maze
+from snake import build_snake
 from plants import *
 
 WORLD_SIZE = get_world_size()
@@ -18,6 +19,22 @@ def plant_rep(fn_list, x, y):
         if x != WORLD_SIZE:
             move_to(x, y)
 
+def subplot(x, y, fns, width):
+    plots = []
+    for _ in range(width):
+        extend(plots, fns)
+    def exec():
+        move_to(x, y)
+        plant_rep(plots, x, y)
+    return exec
+
+def run(fns):
+    def exec():
+        while True:
+            for fn in fns:
+                fn()
+    return exec
+
 def mazes():
     # Divide world into smaller 5x5 mazes
     n = 5
@@ -26,55 +43,39 @@ def mazes():
         for y in range(num_sq_per_side):
             xp = x*n + (n // 2)
             yp = y*n + (n // 2)
-            # TODO: Should move to middle of maze, not corner!
             if not spawn_drone(build_maze(xp, yp, n)):
                 return
 
+def all_trees():
+    for i in range(min(WORLD_SIZE, max_drones())):
+        fns = []
+        if i % 2 == 0:
+            fns.append(alternate(fertilized(tree), bush))
+        else:
+            fns.append(alternate(bush, fertilized(tree)))
+        spawn_drone(run([
+            subplot(i, 0, fns, 1)
+        ]))
+
+def all_cacti():
+    # TODO: Internally parallelized so doesn't subplot well, need limits
+    run([build_cacti_patch(16, (0, 0))])()
+     
 def farms():
-    def subplot(x, y, fns, width):
-        plots = []
-        for _ in range(width):
-            extend(plots, fns)
-        def exec():
-            move_to(x, y)
-            plant_rep(plots, x, y)
-        return exec
-
-    def run(fns):
-        def exec():
-            while True:
-                for fn in fns:
-                    fn()
-        return exec
-
     carrots = subplot(0, 6, [carrot], 4)
     grasses = subplot(4, 6, [grass], 4)
     sunflowers = subplot(8, 6, [sunflower], 2)
     trees= subplot(10, 6, [
-        alternate(tree, bush),
+        alternate(tree, fertilized(bush)),
         alternate(bush, tree)
     ], 3)
     pumpkins = build_pumpkin_patch(6, (0, 0))
-    cacti = build_cacti_patch(16, (0, 0))
-    # run([cacti])()
-
-    def all_trees():
-        wdth = WORLD_SIZE // max_drones()
-        for i in range(max_drones()):
-            spawn_drone(run([
-                subplot(i*wdth, 0, [
-                    alternate(tree, bush),
-                    alternate(bush, tree)
-                ],
-                wdth/2)
-            ]))
-    all_trees()
     
-    # spawn_drone(run([carrots, grasses]))
-    # spawn_drone(run([sunflowers]))
-    # spawn_drone(run([trees]))
-    # while True:
-    #     pumpkins()
+    spawn_drone(run([carrots]))
+    spawn_drone(run([grasses]))
+    spawn_drone(run([sunflowers]))
+    spawn_drone(run([trees]))
+    spawn_drone(run([pumpkins]))
 
 def main():
     clear()
@@ -83,5 +84,8 @@ def main():
     pet_the_piggy()
     mazes()
     # farms()
+    # all_cacti()
+    # all_trees()
+    # build_snake(4)()
 
 main()

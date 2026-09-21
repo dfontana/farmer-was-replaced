@@ -214,7 +214,8 @@ def watered(fn):
 def fertilized(fn):
     def exec(ctx):
         fn(ctx)
-        use_item(Items.Fertilizer)
+        if num_items(Items.Fertilizer) > 0:
+            use_item(Items.Fertilizer)
     return exec
 
 def alternate(fn1, fn2):
