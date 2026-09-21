@@ -57,33 +57,58 @@ def all_trees():
             subplot(i, 0, fns, 1)
         ]))
 
+def all_pumpkins():
+    # Divide the world into 6x6 squares with 1 space between each
+    n = 6
+    num_sq_per_side = (WORLD_SIZE+1) // (n+1)
+    for x in range(num_sq_per_side):
+        for y in range(num_sq_per_side):
+            xp = x*(n+1)
+            yp = y*(n+1)
+            if not spawn_drone(run([build_pumpkin_patch(n, (xp, yp))])):
+                return
+
 def all_cacti():
     # TODO: Internally parallelized so doesn't subplot well, need limits
     run([build_cacti_patch(16, (0, 0))])()
      
 def farms():
-    carrots = subplot(0, 6, [carrot], 4)
-    grasses = subplot(4, 6, [grass], 4)
-    sunflowers = subplot(8, 6, [sunflower], 2)
-    trees= subplot(10, 6, [
-        alternate(tree, fertilized(bush)),
+    set_world_size(22)
+    all_pumpkins()
+    # TODO: Could use horizontal plots (movement is left->right)
+    # TODO: Nice to have: bound the plot upper right corner
+
+    # TODO: Polyculture combinator -- it's always a diff plant and it's
+    #       grass|bush|tree|carrot so it's very easy to do this
+    #       but the major gotcha is the (x,y) part that it wants -- simple
+    #       alternation won't work. It may be more intersting to create
+    #       a bounded plot of just polycultures as a result
+    # Carrots feed pumpkins
+    spawn_drone(run([subplot(6, 0, [carrot], 1)]))
+    spawn_drone(run([subplot(13, 0, [carrot], 1)]))
+    spawn_drone(run([subplot(21, 0, [carrot], 1)]))
+
+    # Grass & Tree feed carrot
+    spawn_drone(run([subplot(0, 20, [grass], 6)]))
+    spawn_drone(run([subplot(7, 20, [
+        alternate(tree, bush),
         alternate(bush, tree)
-    ], 3)
-    pumpkins = build_pumpkin_patch(6, (0, 0))
-    
-    spawn_drone(run([carrots]))
-    spawn_drone(run([grasses]))
-    spawn_drone(run([sunflowers]))
-    spawn_drone(run([trees]))
-    spawn_drone(run([pumpkins]))
+    ], 3)]))
+    spawn_drone(run([subplot(20, 0, [
+        alternate(tree, bush),
+    ], 1)]))
+    spawn_drone(run([subplot(14, 20, [
+        alternate(tree, bush),
+        alternate(bush, tree)
+    ], 3)]))
 
 def main():
-    clear()
+    # clear()
     move_to(0, 0)
     change_hat(Hats.Traffic_Cone_Stack)
     pet_the_piggy()
-    mazes()
-    # farms()
+    # mazes()
+    farms()
     # all_cacti()
     # all_trees()
     # build_snake(4)()
