@@ -1,5 +1,5 @@
-from utils import move_to, extend
-from maze import step_maze
+from utils import *
+from maze import build_maze
 from plants import *
 
 WORLD_SIZE = get_world_size()
@@ -19,31 +19,16 @@ def plant_rep(fn_list, x, y):
             move_to(x, y)
 
 def mazes():
-    def sleep(n):
-        start  = get_time()
-        while get_time() - start < n:
-            pass
-
-    def one_maze(x, y, n):
-        def exec():
+    # Divide world into smaller 5x5 mazes
+    n = 5
+    num_sq_per_side = WORLD_SIZE // n
+    for x in range(num_sq_per_side):
+        for y in range(num_sq_per_side):
+            xp = x*n + (n // 2)
+            yp = y*n + (n // 2)
             # TODO: Should move to middle of maze, not corner!
-            move_to(x, y)
-            sleep(1)
-            while True:
-                move_to(x, y)
-                bush(get_ctx(x, y))
-                use_item(Items.Weird_Substance, n)
-                step_maze()
-        return exec
-
-    def multi_maze():
-        num_sq_per_side = (max_drones()**(1/2)) // 1
-        size = WORLD_SIZE // num_sq_per_side
-        for x in range(num_sq_per_side):
-            for y in range(num_sq_per_side):
-                spawn_drone(one_maze(x*size, y*size, size))
-
-    # TODO run mazes
+            if not spawn_drone(build_maze(xp, yp, n)):
+                return
 
 def farms():
     def subplot(x, y, fns, width):
@@ -71,7 +56,7 @@ def farms():
     ], 3)
     pumpkins = build_pumpkin_patch(6, (0, 0))
     cacti = build_cacti_patch(16, (0, 0))
-    run([cacti])()
+    # run([cacti])()
 
     def all_trees():
         wdth = WORLD_SIZE // max_drones()
@@ -83,20 +68,20 @@ def farms():
                 ],
                 wdth/2)
             ]))
-    # all_trees()
+    all_trees()
     
     # spawn_drone(run([carrots, grasses]))
     # spawn_drone(run([sunflowers]))
     # spawn_drone(run([trees]))
     # while True:
     #     pumpkins()
-        
+
 def main():
-    # clear()
+    clear()
     move_to(0, 0)
     change_hat(Hats.Traffic_Cone_Stack)
     pet_the_piggy()
-    # mazes()
-    farms()
+    mazes()
+    # farms()
 
 main()

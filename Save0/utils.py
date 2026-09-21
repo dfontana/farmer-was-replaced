@@ -40,3 +40,8 @@ def extend(l1, l2):
     for i in l2:
         l1.append(i)
     return l1
+
+def sleep(n):
+    start  = get_time()
+    while get_time() - start < n:
+        pass

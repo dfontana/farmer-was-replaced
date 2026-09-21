@@ -1,4 +1,5 @@
-from utils import move_to
+from utils import *
+from plants import get_ctx, bush
 
 def neighbors(current):
     ret = []
@@ -27,3 +28,15 @@ def step_maze(current=(get_pos_x(), get_pos_y()), goal=measure(), visited=None, 
     if path:
         move_to(path[-1][0], path[-1][1])
     return False
+
+def build_maze(x, y, n):
+    amt = n * 2**(num_unlocked(Unlocks.Mazes) -1)
+    def exec():
+        move_to(x, y)
+        sleep(1)
+        while True:
+            move_to(x, y)
+            bush(get_ctx(x, y))
+            use_item(Items.Weird_Substance, amt)
+            step_maze()
+    return exec
