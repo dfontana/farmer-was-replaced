@@ -130,6 +130,81 @@ def build_pumpkin_patch(size, root):
 
     return routine
 
+def build_cacti_patch(size, root):
+    x, y = root[0], root[1]
+
+    def needs_swap(delta, dir):
+        return delta < size and measure() > (measure(dir) or 0)
+    
+    def sort_p():
+        def sort_s(x, y, dir):
+            def exec():
+                while True:
+                    is_sorted = True
+                    move_to(x, y)
+                    for delta in range(size-1):
+                        # Am I sorted?
+                        if needs_swap(delta, dir):
+                            is_sorted = False
+                            swap(dir)
+                        move(dir)
+                    if is_sorted:
+                        break
+            return exec
+
+        for xm, ym, dir in [(0, 1, East), (1, 0, North)]:
+            drones = []
+            v = size-1
+            move_to(x, y)
+            while True:
+                if v < 0:
+                    break
+                drone = spawn_drone(sort_s(x+(xm*v), y+(ym*v), dir))
+                if drone:
+                    v -= 1
+                    drones.append(drone)
+            for d in drones:
+                wait_for(d)
+
+    def routine():
+        def grow_col(x, y):
+            def exec():
+                while True:
+                    is_grown = True
+                    move_to(x, y)
+                    for _ in range(size):
+                        if get_ground_type() != Grounds.Soil:
+                            till()
+                        if get_entity_type() == Entities.Cactus:
+                            if not can_harvest():
+                                try_water()
+                                is_grown = False
+                        elif plant(Entities.Cactus):
+                            try_water()
+                            is_grown = False
+                        move(North)
+                    if is_grown:
+                        break
+            return exec
+
+        drones = []
+        v = size-1
+        move_to(x, y)
+        while True:
+            if v < 0:
+                break
+            drone = spawn_drone(grow_col(x+v, y))
+            if drone:
+                v -= 1
+                drones.append(drone)
+        for d in drones:
+            wait_for(d)
+            
+        sort_p()
+        try_harvest()
+
+    return routine
+
 def watered(fn):
     def exec(ctx):
         try_water()

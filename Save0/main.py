@@ -26,6 +26,7 @@ def mazes():
 
     def one_maze(x, y, n):
         def exec():
+            # TODO: Should move to middle of maze, not corner!
             move_to(x, y)
             sleep(1)
             while True:
@@ -35,12 +36,14 @@ def mazes():
                 step_maze()
         return exec
 
-    
-    spawn_drone(one_maze(15,15,8))
-    spawn_drone(one_maze(0,15,8))
-    spawn_drone(one_maze(15,0,8))
-    one_maze(0,0,8)()
-    
+    def multi_maze():
+        num_sq_per_side = (max_drones()**(1/2)) // 1
+        size = WORLD_SIZE // num_sq_per_side
+        for x in range(num_sq_per_side):
+            for y in range(num_sq_per_side):
+                spawn_drone(one_maze(x*size, y*size, size))
+
+    # TODO run mazes
 
 def farms():
     def subplot(x, y, fns, width):
@@ -52,70 +55,48 @@ def farms():
             plant_rep(plots, x, y)
         return exec
 
+    def run(fns):
+        def exec():
+            while True:
+                for fn in fns:
+                    fn()
+        return exec
+
     carrots = subplot(0, 6, [carrot], 4)
     grasses = subplot(4, 6, [grass], 4)
     sunflowers = subplot(8, 6, [sunflower], 2)
-    trees= subplot(10, 6, [alternate(tree, bush), alternate(bush, tree)], 3)
+    trees= subplot(10, 6, [
+        alternate(tree, bush),
+        alternate(bush, tree)
+    ], 3)
     pumpkins = build_pumpkin_patch(6, (0, 0))
+    cacti = build_cacti_patch(16, (0, 0))
+    run([cacti])()
 
-    def drone1():
-        while True:
-            carrots()
-            grasses()
-
-    def drone2():
-        while True:
-            sunflowers()
-
-    def drone3():
-        while True:
-            trees()
+    def all_trees():
+        wdth = WORLD_SIZE // max_drones()
+        for i in range(max_drones()):
+            spawn_drone(run([
+                subplot(i*wdth, 0, [
+                    alternate(tree, bush),
+                    alternate(bush, tree)
+                ],
+                wdth/2)
+            ]))
+    # all_trees()
     
-    spawn_drone(drone1)
-    spawn_drone(drone2)
-    spawn_drone(drone3)
-    while True:
-        pumpkins()
+    # spawn_drone(run([carrots, grasses]))
+    # spawn_drone(run([sunflowers]))
+    # spawn_drone(run([trees]))
+    # while True:
+    #     pumpkins()
         
-    # TODO: Layout engine to optimize drone movements. Since all planting assumes
-    # south->north,west->east there's a lot of wasted time moving between sub-plots
-    # where-as a more efficient zig-zag routine would work better. Even when traversing
-    # a pumpkin patch (inbetween direct moves, like the initial planting)
-    # 
-    # TODO: Need layout management
-    #     plant_square(3, pumpkin) -> Does not take entire column
-    #
-    # So logically I want to combinators to finish the columns on that square
-    #     plant_plan([
-    #       [pumpkin, pumpkin, pumpkin, alternate(tree, grass)], <- Run last function til end of col?
-    #       [pumpkin, pumpkin, pumpkin, alternate(grass, tree)],
-    #       [pumpkin, pumpkin, pumpkin, carrot)],
-    #       [alternate(bush, tree)],
-    #       [grass],
-    #     ])
-    #
-    # Pumpkin needs to know when to harvest though, so it wants to know the target size to trigger
-    # the harvest condition vs repair condition. You could feed it side length to work from, but then
-    # it needs to know the origin or search for the larger pumpkin around it. Alt: you gotta lay out
-    # the specific ranges
-    #     plant_plan([
-    #       (pumpkin,(3,3),(0,0)),
-    #       (alternate(tree, grass), None, (0,3)), <-- 'None' signifies what? no size bounds? 
-    #       [pumpkin, pumpkin, pumpkin, alternate(grass, tree)],
-    #       [pumpkin, pumpkin, pumpkin, carrot)],
-    #       [alternate(bush, tree)],
-    #       [grass],
-    #     ])
-    #
-    # Current approach is nearly there but since it manipulates movement, we need to orchestrate how the
-    # drone moves around the patch between scans better. Eg run the patch routine, then move it from
-    # where it's currently at back into the rest of the layout
-
 def main():
-    clear()
+    # clear()
     move_to(0, 0)
     change_hat(Hats.Traffic_Cone_Stack)
     pet_the_piggy()
-    mazes()
+    # mazes()
+    farms()
 
 main()
